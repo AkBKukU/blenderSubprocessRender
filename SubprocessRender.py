@@ -15,9 +15,19 @@ from subprocess import Popen
 from pprint import pprint
 
 
+thread_options = [
+    ("1", "All", "Use all available threads", 1),
+    ("2", "Only", "Only use this amount of threads", 2),
+    ("3", "Except", "Use this many less than all threads", 3),
+]
+
+
 class SubprocessRenderProperties(bpy.types.PropertyGroup):
     '''Subprocess Render  settings'''
     thread_count = bpy.props.IntProperty(name="Thread Count", default=4)
+    thread_usage = bpy.props.EnumProperty(
+        items=thread_options, name = "Thread Setting", default="1")
+
 
 class SubprocessRenderPanel(bpy.types.Panel):
     '''Properties panel to configure subprocess rendering'''
@@ -32,7 +42,8 @@ class SubprocessRenderPanel(bpy.types.Panel):
 
         scene = context.scene
 
-        self.layout.label(text="Render Threads:")
+        row = layout.row()
+        row.prop(scene.subprocess_render, "thread_usage", expand=True)
         col = layout.column()
         col.prop(scene.subprocess_render,"thread_count")
         col.operator(SubprocessRenderStart.bl_idname)
