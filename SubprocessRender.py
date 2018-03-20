@@ -37,6 +37,26 @@ class SubprocessRenderProperties(bpy.types.PropertyGroup):
     output_path = bpy.props.StringProperty(name="Output Path", subtype="FILE_PATH", default="//output.avi")
     ffmpeg_options = bpy.props.StringProperty(name="FFmpeg", default="-c:v libx264 -preset:v veryfast -c:a aac -b:a 320k -strict -2")
 
+def clear_frames(scene):
+    render_path = os.path.dirname(bpy.path.abspath(scene.render.filepath))
+    render_file = os.path.basename(bpy.path.abspath(scene.render.filepath))
+
+    # Reformat blender frame output to ffmpeg frame input
+    digits = render_file.count('#')
+    split_point = '#' * digits
+    start, end = render_file.split(split_point)
+    count = len([name for name in os.listdir(render_path) if os.path.isfile(render_path + '/' + name)])
+
+    ffmpeg_image_name = start + '%0' + str(digits) + 'd' + end
+
+    for i in range(0,count):
+        try:
+            print(bpy.path.abspath(render_path + '/' + start + '%06d' % i + end))
+            os.remove(bpy.path.abspath(render_path + '/' + start + '%06d' % i + end))
+        except OSError:
+            pass
+
+
 
 class SubprocessRenderPanel(bpy.types.Panel):
     '''Properties panel to configure subprocess rendering'''
@@ -94,6 +114,7 @@ class SubprocessRenderStart(bpy.types.Operator):
         frame_ranges[0][0] = scene.frame_start
         frame_ranges[-1][1] = scene.frame_end
 
+        clear_frames(scene)
         # Begin threads
         processes = [Popen(cmd, shell=True) for cmd in commands]
         for p in processes: p.wait()
@@ -121,6 +142,13 @@ class SubprocessRenderStart(bpy.types.Operator):
             outputs={bpy.path.abspath(scene.subprocess_render.output_path): scene.subprocess_render.ffmpeg_options }
         )
         ff.run()
+
+        clear_frames(scene)
+        try:
+            os.remove(audio_path)
+        except OSError:
+            pass
+
 
         return {'FINISHED'}
 
