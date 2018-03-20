@@ -11,6 +11,7 @@ bl_info = {
 
 import bpy
 import os
+import ffmpy
 from subprocess import Popen
 from pprint import pprint
 
@@ -21,6 +22,7 @@ thread_options = [
     ("3", "Except", "Use this many less than all threads", 3),
 ]
 
+# Reset thread count to max when all is selected
 def uiupdate(self,context):
     scene = context.scene
     if scene.subprocess_render.thread_usage == "1":
@@ -32,6 +34,8 @@ class SubprocessRenderProperties(bpy.types.PropertyGroup):
     thread_count = bpy.props.IntProperty(name="Thread Count", default=4,min=1)
     thread_usage = bpy.props.EnumProperty(
         items=thread_options, name = "Thread Setting", default="1",update=uiupdate)
+    output_path = bpy.props.StringProperty(name="Output Path", subtype="FILE_PATH", default="//output.avi")
+    ffmpeg_options = bpy.props.StringProperty(name="FFmpeg", default="-c:v libx264 -preset:v veryfast -c:a aac -b:a 320k -strict -2")
 
 
 class SubprocessRenderPanel(bpy.types.Panel):
@@ -52,6 +56,8 @@ class SubprocessRenderPanel(bpy.types.Panel):
         col = layout.column()
         col.prop(scene.subprocess_render,"thread_count")
         col = layout.column()
+        col.prop(scene.subprocess_render,"output_path")
+        col.prop(scene.subprocess_render,"ffmpeg_options")
         col.operator(SubprocessRenderStart.bl_idname)
 
 
@@ -66,6 +72,9 @@ class SubprocessRenderStart(bpy.types.Operator):
         frame_ranges = []
         commands = []
         frame_count = scene.frame_end - scene.frame_start
+        render_path = os.path.dirname(bpy.path.abspath(scene.render.filepath))
+        render_file = os.path.basename(bpy.path.abspath(scene.render.filepath))
+        command = str('blender -b "' + str(bpy.path.abspath(bpy.data.filepath)) + '" -s %d -e %d -a')
 
         threads =scene.render.threads
         if scene.subprocess_render.thread_usage == "1":
@@ -75,18 +84,15 @@ class SubprocessRenderStart(bpy.types.Operator):
         elif scene.subprocess_render.thread_usage == "3":
             threads = threads - scene.subprocess_render.thread_count
 
-        command = str('blender -b "' + str(bpy.path.abspath(bpy.data.filepath)) + '" -s %d -e %d -a')
         frames_per_thread = int(frame_count / threads)
         # Build commands for subprocesses
         for i in range(0,threads):
             frame_ranges.append([i*frames_per_thread+1,(i+1)*frames_per_thread])
             commands.append(command % (frame_ranges[-1][0],frame_ranges[-1][1]))
 
-        # Set start and end frames explcitly
+        # Set start and end frames explicitly
         frame_ranges[0][0] = scene.frame_start
         frame_ranges[-1][1] = scene.frame_end
-
-        pprint(frame_ranges)
 
         # Begin threads
         processes = [Popen(cmd, shell=True) for cmd in commands]
@@ -95,6 +101,26 @@ class SubprocessRenderStart(bpy.types.Operator):
         # Render audio
         audio_path=os.path.dirname(bpy.path.abspath(scene.render.filepath))+"/audio.flac"
         bpy.ops.sound.mixdown(filepath=audio_path, container='FLAC', codec='FLAC', bitrate=320)
+
+        # Reformat blender frame output to ffmpeg frame input
+        digits = render_file.count('#')
+        split_point = '#' * digits
+        start, end = render_file.split(split_point)
+        ffmpeg_image_name = start + '%0' + str(digits) + 'd' +  end
+        ffmpeg_input_options = '-r ' + str(round(scene.render.fps/scene.render.fps_base,2)) + \
+            ' -f image2' + \
+            ' -s ' + str(scene.render.resolution_x) + 'x' + str(scene.render.resolution_y)
+
+        try:
+            os.remove(bpy.path.abspath(scene.subprocess_render.output_path))
+        except OSError:
+            pass
+
+        ff = ffmpy.FFmpeg(
+            inputs={ render_path + '/' + ffmpeg_image_name : ffmpeg_input_options , audio_path : None },
+            outputs={bpy.path.abspath(scene.subprocess_render.output_path): scene.subprocess_render.ffmpeg_options }
+        )
+        ff.run()
 
         return {'FINISHED'}
 
