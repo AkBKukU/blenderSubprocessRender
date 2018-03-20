@@ -89,8 +89,8 @@ class SubprocessRenderStart(bpy.types.Operator):
         pprint(frame_ranges)
 
         # Begin threads
-        #processes = [Popen(cmd, shell=True) for cmd in commands]
-        #for p in processes: p.wait()
+        processes = [Popen(cmd, shell=True) for cmd in commands]
+        for p in processes: p.wait()
 
         # Render audio
         audio_path=os.path.dirname(bpy.path.abspath(scene.render.filepath))+"/audio.flac"
