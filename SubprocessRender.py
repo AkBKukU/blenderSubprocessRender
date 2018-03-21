@@ -45,7 +45,10 @@ def clear_frames(scene):
     digits = render_file.count('#')
     split_point = '#' * digits
     start, end = render_file.split(split_point)
-    count = len([name for name in os.listdir(render_path) if os.path.isfile(render_path + '/' + name)])
+    try:
+        count = len([name for name in os.listdir(render_path) if os.path.isfile(render_path + '/' + name)])
+    except OSError:
+        return
 
     ffmpeg_image_name = start + '%0' + str(digits) + 'd' + end
 
