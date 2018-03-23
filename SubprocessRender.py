@@ -60,7 +60,7 @@ def clear_frames(scene):
 
 class SubprocessRenderPanel(bpy.types.Panel):
     '''Properties panel to configure subprocess rendering'''
-    bl_idname = "RENDER_PT_youtube_upload"
+    bl_idname = "RENDER_PT_subproccess_render"
     bl_label = "Subprocess Render"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
