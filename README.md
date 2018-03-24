@@ -28,6 +28,12 @@ You can change the settings that are used with FFmpeg if you need to customize
 the output. If you need to reset back to the default settings, right click the 
 text box and select the reset option from the popup. 
 
+It would like help to go into the Performance panel in the rendering options and
+limit Blender to one thread before using Subprocess Render.
+
+Remember to save before starting the subprocess render. The new Blender 
+instances load the file from the drive, not the instance you have open.
+
 ## Setup
 You will need to install ffmpy with pip so blender can use FFMpeg. Blender is
 uses Python 3 for plugins so you will need to specify that when installing.
