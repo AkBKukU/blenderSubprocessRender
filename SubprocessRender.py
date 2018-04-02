@@ -132,6 +132,7 @@ class SubprocessRenderStart(bpy.types.Operator):
         start, end = render_file.split(split_point)
         ffmpeg_image_name = start + '%0' + str(digits) + 'd' +  end
         ffmpeg_input_options = '-r ' + str(round(scene.render.fps/scene.render.fps_base,2)) + \
+            ' -start_number ' + str(scene.frame_start) + \
             ' -f image2' + \
             ' -s ' + str(scene.render.resolution_x) + 'x' + str(scene.render.resolution_y)
 
