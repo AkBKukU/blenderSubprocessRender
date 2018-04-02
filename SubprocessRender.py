@@ -110,7 +110,7 @@ class SubprocessRenderStart(bpy.types.Operator):
         frames_per_thread = int(frame_count / threads)
         # Build commands for subprocesses
         for i in range(0,threads):
-            frame_ranges.append([i*frames_per_thread+1,(i+1)*frames_per_thread])
+            frame_ranges.append([scene.frame_start+i*frames_per_thread+1,scene.frame_start+(i+1)*frames_per_thread])
             commands.append(command % (frame_ranges[-1][0],frame_ranges[-1][1]))
 
         # Set start and end frames explicitly
