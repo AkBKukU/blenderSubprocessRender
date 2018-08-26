@@ -123,8 +123,8 @@ class SubprocessRenderStart(bpy.types.Operator):
         for p in processes: p.wait()
 
         # Render audio
-        audio_path=os.path.dirname(bpy.path.abspath(scene.render.filepath))+"/audio.flac"
-        bpy.ops.sound.mixdown(filepath=audio_path, container='FLAC', codec='FLAC', bitrate=320)
+        audio_path=os.path.dirname(bpy.path.abspath(scene.render.filepath))+"/audio.wav"
+        bpy.ops.sound.mixdown(filepath=audio_path, container="WAV", codec='PCM')
 
         # Reformat blender frame output to ffmpeg frame input
         digits = render_file.count('#')
